@@ -1,7 +1,8 @@
 #!/usr/bin/python3
+
 from colorama import Fore, Back, Style
 
-maximum_number = 10
+import argparse
 
 def isPrime(value):
     print('\nReference number ' + str(value))
@@ -14,16 +15,24 @@ def isPrime(value):
     return True
 
 def main():
-    print("Starting to compute prime numbers up to " + str(maximum_number))
+
+    parser = argparse.ArgumentParser(description='PSR argparse example.')
+    parser.add_argument('--maximum_number', type=int, help='an integer for the accumulator')
+    parser.add_argument('--verbose', action='store_true', help='print stuff to the screen or not.')
+    args = vars(parser.parse_args())
+    print(args)
+
+    print("Starting to compute prime numbers up to " + str(args['maximum_number']))
     counter = 0
-    for i in range(1, maximum_number):
+    for i in range(1, args['maximum_number']):
         if isPrime(i):
             print(Back.YELLOW + Fore.BLUE + Style.DIM + 'Number ' + Back.GREEN + Fore.RED +
                   Style.DIM + str(i) + Back.YELLOW + Fore.BLUE + Style.DIM + ' is prime.' + Style.RESET_ALL)
             counter += 1
         else:
             print('Number ' + str(i) + ' is not prime.')
-    print(Fore.BLUE + 'We have ' + str(counter) + ' prime numbers.' + Style.RESET_ALL)
+    if args['verbose']:
+        print(Fore.BLUE + 'We have ' + str(counter) + ' prime numbers.' + Style.RESET_ALL)
 
 if __name__ == "__main__":
     main()
