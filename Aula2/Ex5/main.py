@@ -6,8 +6,8 @@ import readchar
 
 def printAllCharsUpTo(stop_char):
 
-    print('I dont know how to do this yet...')
-    print('Printing all values up to stop_char ' + str(stop_char))
+    #print('I dont know how to do this yet...')
+    #print('Printing all values up to stop_char ' + str(stop_char))
     for i in range(ord(' '), ord(stop_char)+1):
         print(chr(i))
 
@@ -17,16 +17,16 @@ def readAllUpTo(stop_key):
     pressed_keys = [] #empty list to start with
 
     while True:
-        print('Type something (X to stop). ')
+        #print('Type something (X to stop). ')
         pressed_key = readchar.readkey()
 
         if pressed_key == stop_key:
-            print('You typed ' + Fore.RED + Style.BRIGHT + pressed_key + Style.RESET_ALL + '...' + ' terminating.')
+            #print('You typed ' + Fore.RED + Style.BRIGHT + pressed_key + Style.RESET_ALL + '...' + ' terminating.')
             break
         else:
            #print('Thank you for typing ' + pressed_key)
             pressed_keys.append(pressed_key)
-    print('The keys you pressed are: ' + str(pressed_keys))
+    #print('The keys you pressed are: ' + str(pressed_keys))
 
     #Analyze the list and count
     count_pressed_numbers = 0
@@ -41,8 +41,8 @@ def readAllUpTo(stop_key):
                 count_pressed_others += 1
                 pressed_others.append(pressed_key)
 
-    print('You entered ' + str(count_pressed_numbers) + ' numbers: ' + str(pressed_numbers))
-    print('You entered ' + str(count_pressed_others) + ' others: ' + str(pressed_others))
+    #print('You entered ' + str(count_pressed_numbers) + ' numbers: ' + str(pressed_numbers))
+    #print('You entered ' + str(count_pressed_others) + ' others: ' + str(pressed_others))
 
 
     text = ''
@@ -53,7 +53,7 @@ def readAllUpTo(stop_key):
         text += color + pressed_other + Style.RESET_ALL
         idx += 1
 
-    print('Colored text:')
+    #print('Colored text:')
     print(text)
 
 def main():
