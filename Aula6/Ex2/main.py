@@ -3,14 +3,14 @@ import cv2
 
 def main():
     # initial setup
-    #capture = cv2.VideoCapture(0) #stup video capture for webcam
-    capture = cv2.VideoCapture('video_teste.mp4') #setup video capture from video files
+    # capture = cv2.VideoCapture(0) #stup video capture for webcam
+    capture = cv2.VideoCapture('video_teste.mp4') #s etup video capture from video files
 
     #configure opencv window
     window_name = 'A5-Ex2'
-    cv2.namedWindow(window_name,cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)
     while True:
-        _, image = capture.read() # get an image from the camera
+        _, image = capture.read()   # get an image from the camera
         if image is None:
             print('Video is over, terminating.')
             break #video is over
