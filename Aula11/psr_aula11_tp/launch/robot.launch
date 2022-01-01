@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="model" default="$(find psr_aula11_tp)/urdf/scara.urdf"/>
+  <param name="robot_description" command="$(find xacro)/xacro $(arg model)"/>
+  <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <node type='rviz' name="rviz" pkg="rviz" args="-d $(find psr_aula11_tp)/config/rviz.rviz"/>
+</launch>
