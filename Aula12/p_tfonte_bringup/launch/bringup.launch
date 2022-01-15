@@ -1,0 +1,25 @@
+<launch>
+    <!--Bloco 1: argumentos do launch file.-->
+    <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+    <arg name="player_name" default="p_tfonte"/>
+    <arg name="x_pos" default="-3.0"/>
+    <arg name="y_pos" default="1.0"/>
+    <arg name="z_pos" default="0.0"/>
+
+    <group ns = "$(arg player_name)">
+        <param name="tf_prefix" value="$(arg player_name)"></param>
+        <!--Bloco 3: Carregamento do xacro do robot para o parâmetro robot_description.-->
+        <param name="robot_description" command="$(find xacro)/xacro --inorder $(find p_tfonte_description)/urdf/p_tfonte.urdf.xacro" />
+    </group>
+    <!--Include do spawn.launch-->
+    <include file="$(find p_tfonte_bringup)/launch/spawn.launch">
+        <arg name="player_name" value="$(arg player_name)"/>
+        <arg name="x_pos" value="$(arg x_pos)"/>
+        <arg name="y_pos" value="$(arg y_pos)"/>
+        <arg name="z_pos" value="$(arg z_pos)"/>
+    </include>
+
+    <!--Include do visualize.launch-->
+    <include file="$(find p_tfonte_bringup)/launch/visualize.launch">
+    </include>
+</launch>
