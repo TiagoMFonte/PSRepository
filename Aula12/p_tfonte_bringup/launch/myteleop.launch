@@ -1,0 +1,10 @@
+<launch>
+  <arg name="player_name" default="p_tfonte"/>
+  <!--Use a player_name namespace to get unique topic names, services, parameters, etc.-->
+  <group ns="$(arg player_name)">
+    <!-- turtlebot3_teleop_key already has its own built in velocity smoother -->
+    <node pkg="p_tfonte_bringup" type="myteleop.py" name="myteleop"  output="screen">
+      <remap from="cmd_vel" to="/$(arg player_name)/cmd_vel"/>
+    </node>
+  </group>
+</launch>
