@@ -1,5 +1,5 @@
 <launch>
-    <!--Bloco 2: Criação de um world om gazebo.-->
+    <!--Bloco 2: Criação de um world no gazebo.-->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <!--<arg name="world_name" value="$(find turtlebot3_gazebo)/worlds/turtlebot3_house.world"/>-->
         <arg name="world_name" value="$(find psr_fnr)/worlds/fnr.world"/>
