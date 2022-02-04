@@ -2,7 +2,8 @@
     <!--Bloco 2: Criação de um world no gazebo.-->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <!--<arg name="world_name" value="$(find turtlebot3_gazebo)/worlds/turtlebot3_house.world"/>-->
-        <arg name="world_name" value="$(find psr_fnr)/worlds/fnr.world"/>
+<!--        <arg name="world_name" value="$(find psr_fnr)/worlds/fnr.world"/>-->
+        <arg name="world_name" value="$(find turtlebot3_gazebo)/worlds/empty.world"/>
         <arg name="paused" value="false"/>
         <arg name="use_sim_time" value="true"/>
         <arg name="gui" value="true"/>
