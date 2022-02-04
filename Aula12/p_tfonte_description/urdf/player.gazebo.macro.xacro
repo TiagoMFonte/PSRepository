@@ -1,12 +1,27 @@
 <?xml version="1.0"?>
-<robot name="turtlebot3_waffle_pi_sim" xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:arg name="laser_visual"  default="false"/>
-  <xacro:arg name="camera_visual" default="false"/>
-  <xacro:arg name="imu_visual"    default="false"/>
+<robot name="gazebo_macro" xmlns:xacro="http://ros.org/wiki/xacro">
+<xacro:macro name="gazebo_macro" params="player_color laser_visual camera_visual imu_visual">
+<!--  <xacro:arg name="laser_visual"  default="false"/>-->
+<!--  <xacro:arg name="camera_visual" default="false"/>-->
+<!--  <xacro:arg name="imu_visual"    default="false"/>-->
 
   <gazebo reference="base_link">
-    <material>Gazebo/Yellow</material>
+<!--    <material>Gazebo/DarkGrey</material>-->
     <material>Gazebo/${player_color}</material>
+  </gazebo>
+
+  <gazebo reference="base_link">
+    <sensor name="base_link" type="contact">
+      <update_rate>1000.0</update_rate>
+      <always_on>true</always_on>
+      <contact>
+        <collision>base_footprint_fixed_joint_lump__base_link_collision_collision</collision>
+      </contact>
+      <plugin name="base_link_contact_sensor_plugin" filename="libgazebo_ros_bumper.so">
+        <bumperTopicName>contact</bumperTopicName>
+        <frameName>world</frameName>
+      </plugin>
+    </sensor>
   </gazebo>
 
   <gazebo reference="wheel_left_link">
@@ -17,7 +32,8 @@
     <minDepth>0.001</minDepth>
     <maxVel>0.1</maxVel>
     <fdir1>1 0 0</fdir1>
-    <material>Gazebo/FlatBlack</material>
+    <!--    Gazebo properties are global: https://answers.ros.org/question/216975/loading-variables-with-xacroinclude/ -->
+    <material>Gazebo/${player_color}</material>
   </gazebo>
 
   <gazebo reference="wheel_right_link">
@@ -26,9 +42,10 @@
     <kp>500000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
-    <maxVel>0.1</maxVel>
+    <maxVel>0.01</maxVel>
     <fdir1>1 0 0</fdir1>
-    <material>Gazebo/FlatBlack</material>
+    <!--    Gazebo properties are global: https://answers.ros.org/question/216975/loading-variables-with-xacroinclude/ -->
+    <material>Gazebo/${player_color}</material>
   </gazebo>
 
   <gazebo reference="caster_back_right_link">
@@ -54,33 +71,16 @@
   <gazebo reference="imu_link">
     <sensor type="imu" name="imu">
       <always_on>true</always_on>
-      <visualize>$(arg imu_visual)</visualize>
+      <visualize>${imu_visual}</visualize>
     </sensor>
     <material>Gazebo/Grey</material>
   </gazebo>
 
-  <gazebo>
-    <plugin name="turtlebot3_waffle_pi_controller" filename="libgazebo_ros_diff_drive.so">
-      <commandTopic>cmd_vel</commandTopic>
-      <odometryTopic>odom</odometryTopic>
-      <odometryFrame>odom</odometryFrame>
-      <odometrySource>world</odometrySource>
-      <publishOdomTF>true</publishOdomTF>
-      <robotBaseFrame>base_footprint</robotBaseFrame>
-      <publishWheelTF>false</publishWheelTF>
-      <publishTf>true</publishTf>
-      <publishWheelJointState>true</publishWheelJointState>
-      <legacyMode>false</legacyMode>
-      <updateRate>30</updateRate>
-      <leftJoint>wheel_left_joint</leftJoint>
-      <rightJoint>wheel_right_joint</rightJoint>
-      <wheelSeparation>0.287</wheelSeparation>
-      <wheelDiameter>0.066</wheelDiameter>
-      <wheelAcceleration>1</wheelAcceleration>
-      <wheelTorque>10</wheelTorque>
-      <rosDebugLevel>na</rosDebugLevel>
-    </plugin>
-  </gazebo>
+  <!--Using gazebo or ROS native controller for differential drives.-->
+  <xacro:include filename="$(find p_moliveira_description)/urdf/ros_diff_drive.gazebo.xacro"/>
+
+<!--  Using ROS diff drive controller ... much slower-->
+<!--  <xacro:include filename="$(find p_moliveira_description)/urdf/ros_control.gazebo.xacro"/>-->
 
   <gazebo>
     <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
@@ -90,7 +90,7 @@
       <topicName>imu</topicName>
       <serviceName>imu_service</serviceName>
       <gaussianNoise>0.0</gaussianNoise>
-      <updateRate>0</updateRate>
+      <updateRate>200</updateRate>
       <imu>
         <noise>
           <type>gaussian</type>
@@ -115,7 +115,8 @@
     <material>Gazebo/FlatBlack</material>
     <sensor type="ray" name="lds_lfcd_sensor">
       <pose>0 0 0 0 0 0</pose>
-      <visualize>$(arg laser_visual)</visualize>
+      <visualize>${laser_visual}</visualize>
+<!--      <visualize>true</visualize>-->
       <update_rate>5</update_rate>
       <ray>
         <scan>
@@ -144,22 +145,26 @@
     </sensor>
   </gazebo>
 
-<!--link : https://www.raspberrypi.org/documentation/hardware/camera/-->
+  <!--link : https://www.raspberrypi.org/documentation/hardware/camera/-->
   <gazebo reference="camera_rgb_frame">
     <sensor type="camera" name="Pi Camera">
       <always_on>true</always_on>
-      <visualize>$(arg camera_visual)</visualize>
+      <visualize>${camera_visual}</visualize>
       <camera>
-          <horizontal_fov>1.085595</horizontal_fov>
-          <image>
-              <width>640</width>
-              <height>480</height>
-              <format>R8G8B8</format>
-          </image>
-          <clip>
-              <near>0.03</near>
-              <far>100</far>
-          </clip>
+<!--        <horizontal_fov>1.085595</horizontal_fov>-->
+        <horizontal_fov>2.165595</horizontal_fov>
+        <image>
+<!--          <width>640</width>-->
+          <width>1280</width>
+<!--          <width>640</width>-->
+<!--          <height>480</height>-->
+          <height>240</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.03</near>
+          <far>100</far>
+        </clip>
       </camera>
       <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
         <alwaysOn>true</alwaysOn>
@@ -178,4 +183,13 @@
     </sensor>
   </gazebo>
 
+  <gazebo reference="player_identifier_support_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+
+  <gazebo reference="player_identifier_link">
+    <material>Gazebo/${player_color}</material>
+  </gazebo>
+
+</xacro:macro>
 </robot>

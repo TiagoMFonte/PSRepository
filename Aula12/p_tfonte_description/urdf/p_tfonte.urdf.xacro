@@ -1,6 +1,16 @@
 <?xml version="1.0" ?>
 <robot name="turtlebot3_waffle_pi" xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:include filename="$(find turtlebot3_description)/urdf/common_properties.xacro"/>
+<!--  Arguments are used as $(arg argument)-->
+  <xacro:arg name="player_name" default="p_tfonte"/>
+  <xacro:arg name="player_color" default="red"/>
+
+<!-- Copy arguments to properties so that they are visible in the included xacros-->
+<!--  Properties are used as ${property}-->
+  <xacro:property name="player_name" value="$(arg player_name)"/>
+  <xacro:property name="player_color" value="$(arg player_color)"/>
+
+<!--  Includes-->
+  <xacro:include filename="$(find p_tfonte_description)/urdf/properties.xacro"/>
   <xacro:include filename="$(find p_tfonte_description)/urdf/p_tfonte.gazebo.xacro"/>
 
   <link name="base_footprint"/>
@@ -17,7 +27,7 @@
       <geometry>
         <mesh filename="package://turtlebot3_description/meshes/bases/waffle_pi_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="light_black"/>
+      <material name="$(arg player_color)"/>
     </visual>
 
     <collision>
