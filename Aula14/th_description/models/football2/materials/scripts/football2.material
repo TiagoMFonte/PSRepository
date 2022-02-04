@@ -1,0 +1,14 @@
+material football2/Image
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture football2.jpg
+        filtering trilinear
+      }
+    }
+  }
+}

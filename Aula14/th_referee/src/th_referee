@@ -1,0 +1,321 @@
+#!/usr/bin/env python3
+
+# --------------------------------------------------
+# Miguel Riem Oliveira.
+# PSR, September 2020.
+# Adapted from http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20broadcaster%20%28Python%29
+# -------------------------------------------------
+
+# ------------------------
+#   IMPORTS
+# ------------------------
+import math, random
+import subprocess
+from colorama import Fore, Back, Style
+from copy import copy
+
+import pandas
+from functools import partial
+import rospy
+import tf_conversions  # Because of transformations
+import tf2_ros
+import geometry_msgs.msg
+from gazebo_msgs.msg import ModelState, ModelStates, ContactsState
+from prettytable import PrettyTable
+
+# ------------------------
+#   DATA STRUCTURES
+# ------------------------
+from gazebo_msgs.srv import SetModelState
+
+
+def bash(cmd, blocking=True, verbose=False):
+    if verbose:
+        print("Executing command: " + cmd)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if blocking:
+        for line in p.stdout.readlines():
+            print(line)
+            p.wait()
+
+
+class Referee:
+
+    def __init__(self):
+
+        rospy.sleep(0.5)  # Wait a bit before starting
+
+        # Verify that all the required parameters exist
+        try:
+            existing_params = rospy.get_param_names()
+        except rospy.ROSException:
+            print("Could not get param name")
+
+        required_params = ['/killed_duration', '/game_duration', '/positive_score', '/negative_score', '/best_hunter_score',
+                           '/best_survivor_score', '/red_players', '/green_players', '/blue_players']
+        print(existing_params)
+        for required_param in required_params:
+            if not required_param in existing_params:
+                raise ValueError('Required ros parameter ' + required_param +
+                                 ' does not exist. Are you sure you load the game params.yaml?')
+
+        self.params = {'killed_duration': rospy.get_param('/killed_duration'),
+                       'game_duration': rospy.get_param('/game_duration'),
+                       'positive_score': rospy.get_param('/positive_score'),
+                       'negative_score': rospy.get_param('/negative_score'),
+                       'best_hunter_score': rospy.get_param('/best_hunter_score'),
+                       'best_survivor_score': rospy.get_param('/best_survivor_score'),
+                       'red': rospy.get_param('/red_players'),
+                       'green': rospy.get_param('/green_players'),
+                       'blue': rospy.get_param('/blue_players')}
+
+        # Create a dictionary so we can retrieve the players of a team using the team color
+        self.score = {'red': 0, 'green': 0, 'blue': 0}
+        self.final_score = {'red': 0, 'green': 0, 'blue': 0}
+
+        rospy.wait_for_service('/gazebo/set_model_state')  # check that this service exists
+
+        self.killed = []
+        self.game_over = False
+        rospy.sleep(0.1)
+
+        # Create an instance for each player
+        self.players = {}
+        count = 1
+        for player in self.params['red']:
+            self.players[player] = PlayerInfo(player, self.params, my_team='red', prey_team='green', hunter_team='blue',
+                                              callbackHuntedEvent=self.callbackHuntedEvent, number=count)
+            count += 1
+        for player in self.params['green']:
+            self.players[player] = PlayerInfo(player, self.params, my_team='green', prey_team='blue', hunter_team='red',
+                                              callbackHuntedEvent=self.callbackHuntedEvent, number=count)
+            count += 1
+        for player in self.params['blue']:
+            self.players[player] = PlayerInfo(player, self.params, my_team='blue', prey_team='red', hunter_team='green',
+                                              callbackHuntedEvent=self.callbackHuntedEvent, number=count)
+            count += 1
+
+        self.game_start_tic = rospy.Time.now()
+        self.timer_check_game = rospy.Timer(rospy.Duration(0.1), self.callbackCheckGame, oneshot=False)
+        self.timer_end_game = rospy.Timer(rospy.Duration(self.params['game_duration']), self.callbackEndGame,
+                                          oneshot=True)
+
+    def callbackEndGame(self, event):
+
+        self.game_over = True
+
+        # Print scoreboard
+        self.printScores()
+
+        # Game over message
+        if self.final_score['red'] == self.final_score['green'] and self.final_score['red'] == self.final_score['blue']:
+            print(Style.BRIGHT + 'Game Over! It is a tie!!!')
+        elif self.final_score['red'] > max(self.final_score['green'], self.final_score['blue']):
+            print(Style.BRIGHT + 'Game Over! Team ' + Fore.RED + 'Red' + Fore.RESET + ' wins!!!')
+        elif self.final_score['green'] > max(self.final_score['red'], self.final_score['blue']):
+            print(Style.BRIGHT + 'Game Over! Team ' + Fore.GREEN + 'Green' + Fore.RESET + ' wins!!!')
+        elif self.final_score['blue'] > max(self.final_score['green'], self.final_score['red']):
+            print(Style.BRIGHT + 'Game Over! Team ' + Fore.BLUE + 'Blue' + Fore.RESET + ' wins!!!')
+
+        rospy.signal_shutdown('Game finished')
+
+    def printScores(self):
+
+        best_hunter, best_survivor = self.getBestHunterAndSurvivor()
+
+        print(Style.BRIGHT + '\nPlayer by player scores:' + Style.RESET_ALL)
+        table = PrettyTable(
+            [Back.LIGHTWHITE_EX + "Player", "Team", "#Hunted", "#Preyed", "Killed", "Spawn" + Style.RESET_ALL])
+
+        for _, player in self.players.items():
+            num_hunted, num_preyed = str(player.num_hunted), str(player.num_preyed)
+            if player.name == best_hunter:
+                num_hunted = Back.LIGHTCYAN_EX + str(player.num_hunted) + Style.RESET_ALL
+            elif player.name == best_survivor:
+                num_preyed = Back.MAGENTA + str(player.num_preyed) + Style.RESET_ALL
+
+            time_to_spawn = self.params['killed_duration'] - (rospy.Time.now() - player.stamp_killed).to_sec()
+
+            if time_to_spawn < 0:
+                time_to_spawn = '---'
+            else:
+                time_to_spawn = "{:.1f}".format(time_to_spawn)
+            table.add_row([player.colorama_color + player.name + Fore.RESET,
+                           player.colorama_color + player.my_team + Fore.RESET,
+                           num_hunted, num_preyed, player.name in self.killed, time_to_spawn])
+
+        table.align = 'c'
+        table.align[Back.LIGHTWHITE_EX + "Player"] = 'l'
+        table.align['Team'] = 'l'
+        print(table)
+
+        print('Best hunter: ' + Fore.LIGHTCYAN_EX + str(best_hunter) + Style.RESET_ALL +
+              ' Best survivor: ' + Fore.MAGENTA + str(best_survivor) + Style.RESET_ALL)
+
+        print(Style.BRIGHT + '\nTeam scores:' + Style.RESET_ALL)
+        table = PrettyTable([Back.LIGHTWHITE_EX + "Team", "Raw Score", "Final Score" + Style.RESET_ALL])
+        for team_key, score in self.score.items():
+            self.final_score[team_key] = score
+            if best_hunter in self.params[team_key]:
+                self.final_score[team_key] += self.params['best_hunter_score']
+            if best_survivor in self.params[team_key]:
+                self.final_score[team_key] += self.params['best_survivor_score']
+            table.add_row([getattr(Fore, team_key.upper()) + team_key + Style.RESET_ALL, str(score),
+                           str(self.final_score[team_key])])
+
+        print(table)
+        game_time = "{:.1f}".format((rospy.Time.now() - self.game_start_tic).to_sec())
+        print('Game time: ' + game_time + ' out of ' + str(self.params['game_duration']))
+
+    def getBestHunterAndSurvivor(self):
+
+        ps = [(player, self.players[player].num_hunted, self.players[player].num_preyed) for player in
+              self.players.keys()]
+        hunt_values = [self.players[player].num_hunted for player in self.players.keys()]
+        prey_values = [self.players[player].num_preyed for player in self.players.keys()]
+
+        best_hunter, maximum_num_hunts, _ = max(ps, key=lambda item: item[1])
+        if hunt_values.count(maximum_num_hunts) > 1:
+            best_hunter = None
+
+        best_survivor, _, minimum_num_preyed = min(ps, key=lambda item: item[2])
+        if prey_values.count(minimum_num_preyed) > 1:
+            best_survivor = None
+
+        # print('best hunter is ' + str(best_hunter))
+        # print('best survivor is ' + str(best_survivor))
+        return best_hunter, best_survivor
+
+    def callbackCheckGame(self, event):
+        if self.game_over:
+            return
+
+        # Resuscitate players
+        now = rospy.Time.now()
+        for player in self.killed:
+            if (now - self.players[player].stamp_killed).to_sec() > self.params['killed_duration']:
+                self.killed.remove(player)
+                self.players[player].stamp_resuscitated = rospy.Time.now()
+                self.movePlayerToArena(player)
+                rospy.logwarn("Resuscitating %s", player)
+
+        # Print scoreboard
+        self.printScores()
+
+    def callbackHuntedEvent(self, hunter, prey):
+        if self.game_over:
+            return
+
+        if not prey in self.killed:
+            rospy.logwarn(hunter + ' hunted ' + prey)
+            self.killPlayer(prey)
+            self.players[hunter].num_hunted += 1
+            self.players[prey].num_preyed += 1
+
+            self.score[self.players[hunter].my_team] += self.params['positive_score']
+            self.score[self.players[prey].my_team] += self.params['negative_score']
+
+    def killPlayer(self, name):
+        self.killed.append(name)
+        self.players[name].stamp_killed = rospy.Time.now()
+        self.removePlayerFromArena(name)
+
+    def removePlayerFromArena(self, name):
+        # Arena limbo area has following dimensions:
+        # x from -1.5 to 1.5
+        # y from 3.5 to 7
+        x = random.random() * 3 - 1.5
+        y = random.random() * 3.5 + 3.5
+        self.warpPlayer(name, x, y, 0)
+
+    def movePlayerToArena(self, name):
+        # Arena area has following dimensions:
+        # x from -8 to 8
+        # y from -2.5 to 2.5
+        x = random.random() * 16 - 8
+        y = random.random() * 5 - 2.5
+        self.warpPlayer(name, x, y, 0)
+
+    def warpPlayer(self, name, x, y, yaw):
+        state_msg = ModelState()
+        state_msg.model_name = name
+        state_msg.pose.position.x = x
+        state_msg.pose.position.y = y
+        quaternion = tf_conversions.tf.transformations.quaternion_from_euler(0, 0, yaw)
+        state_msg.pose.orientation.x = quaternion[0]
+        state_msg.pose.orientation.y = quaternion[1]
+        state_msg.pose.orientation.z = quaternion[2]
+        state_msg.pose.orientation.w = quaternion[3]
+
+        try:
+            set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+            resp = set_state(state_msg)
+        except rospy.ServiceException as e:
+            print("Service call failed:" + str(e))
+
+
+class PlayerInfo:
+
+    def __init__(self, name, players, my_team, prey_team, hunter_team, callbackHuntedEvent, number=1):
+        self.name = name
+        self.number = number
+        self.players = players
+        self.colorama_color = getattr(Fore, my_team.upper())
+        self.my_team, self.prey_team, self.hunter_team = my_team, prey_team, hunter_team
+
+        print('Referee configuring ' + self.name + ', from team ' + self.my_team + ', hunting ' + str(
+            self.players[self.prey_team]) + ' and fleeing from ' + str(self.players[self.hunter_team]))
+
+        self.callbackHuntedEvent = callbackHuntedEvent
+
+        self.stamp_resuscitated = rospy.Time.now()
+        self.stamp_killed = rospy.Time.now() - rospy.Duration.from_sec(10)
+        self.num_hunted = 0
+        self.num_preyed = 0
+
+        self.subscriber_contact = rospy.Subscriber('/' + self.name + '/contact', ContactsState,
+                                                   self.callbackContactReceived)
+
+        print(self.__str__())  # print a report after initialization
+
+    def callbackContactReceived(self, msg):
+        # print(self.colorama_color + self.name + Style.RESET_ALL + ': contact message received')
+        for state in msg.states:
+            # print('Collision between ' + state.collision1_name + ' and ' + state.collision2_name)
+            # collision names are like:
+            # green1::base_footprint::base_footprint_fixed_joint_lump__base_link_collision_collision
+            # Extract just the first part
+            object1 = state.collision1_name.split('::')[0]
+            object2 = state.collision2_name.split('::')[0]
+
+            # print('object1 ' + object1)
+            # print('object2 ' + object2)
+            #
+            # print('self.name ' + str(self.name))
+            # print('self.players[self.team_prey] ' + str(self.players[self.team_prey]))
+
+            # Check if collision is between this object and one of its preys
+            if object1 == self.name and object2 in self.players[self.prey_team]:
+                self.callbackHuntedEvent(self.name, object2)
+            elif object2 == self.name and object1 in self.players[self.prey_team]:
+                self.callbackHuntedEvent(self.name, object1)
+
+    def __str__(self):
+        s = 'Player ' + self.colorama_color + self.name + Style.RESET_ALL + ' (team ' + self.my_team + ')\t'
+        s += 'Hunted: ' + str(self.num_hunted) + ' ; Preyed: ' + str(self.num_preyed)
+        return s
+
+
+# ------------------------
+# GLOBAL VARIABLES
+# ------------------------
+
+def main():
+    rospy.init_node('th_referee')  # initialize the ros node
+    rospy.sleep(0.2)  # make sure the rospy time works
+    referee = Referee()
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    main()

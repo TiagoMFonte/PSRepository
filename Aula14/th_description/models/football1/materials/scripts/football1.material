@@ -1,0 +1,14 @@
+material football1/Image
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture football1.png
+        filtering trilinear
+      }
+    }
+  }
+}

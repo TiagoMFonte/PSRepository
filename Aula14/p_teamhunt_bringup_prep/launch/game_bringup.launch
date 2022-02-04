@@ -1,0 +1,119 @@
+<launch>
+
+    <rosparam command="load" file="$(find p_teamhunt_bringup_prep)/params/game.yaml"/>
+
+<!--    Red Team-->
+
+    <!--        red1-->
+    <include file="$(find p_teamhunt_bringup_prep)/launch/bringup.launch">
+        <arg name="player_name" value="red1"/>
+        <arg name="player_color" value="Red"/>
+        <arg name="x_pos" value="0"/>
+        <arg name="y_pos" value="0"/>
+        <arg name="z_pos" value="0"/>
+        <arg name="visualize" value="false"/>
+        <arg name="driver" value="false"/>
+        <arg name="driver_debug" value="false"/>
+    </include>
+
+    <!--        red2-->
+    <include file="$(find p_teamhunt_bringup_prep)/launch/bringup.launch">
+        <arg name="player_name" value="red2"/>
+        <arg name="player_color" value="Red"/>
+        <arg name="x_pos" value="1"/>
+        <arg name="y_pos" value="0"/>
+        <arg name="z_pos" value="0"/>
+        <arg name="visualize" value="false"/>
+        <arg name="driver" value="false"/>
+        <arg name="driver_debug" value="false"/>
+    </include>
+
+    <!--        red3-->
+    <include file="$(find p_teamhunt_bringup_prep)/launch/bringup.launch">
+        <arg name="player_name" value="red3"/>
+        <arg name="player_color" value="Red"/>
+        <arg name="x_pos" value="2"/>
+        <arg name="y_pos" value="0"/>
+        <arg name="z_pos" value="0"/>
+        <arg name="visualize" value="false"/>
+        <arg name="driver" value="false"/>
+        <arg name="driver_debug" value="false"/>
+    </include>
+
+<!--    Green Team-->
+
+    <!--    green1-->
+    <include file="$(find p_teamhunt_bringup_prep)/launch/bringup.launch">
+        <arg name="player_name" value="green1"/>
+        <arg name="player_color" value="Green"/>
+        <arg name="x_pos" value="5"/>
+        <arg name="y_pos" value="5"/>
+        <arg name="z_pos" value="0"/>
+        <arg name="visualize" value="false"/>
+        <arg name="driver" value="false"/>
+        <arg name="driver_debug" value="false"/>
+    </include>
+
+    <!--    green2-->
+    <include file="$(find p_teamhunt_bringup_prep)/launch/bringup.launch">
+        <arg name="player_name" value="green2"/>
+        <arg name="player_color" value="Green"/>
+        <arg name="x_pos" value="6"/>
+        <arg name="y_pos" value="5"/>
+        <arg name="z_pos" value="0"/>
+        <arg name="visualize" value="false"/>
+        <arg name="driver" value="false"/>
+        <arg name="driver_debug" value="false"/>
+    </include>
+
+    <!--    green3-->
+    <include file="$(find p_teamhunt_bringup_prep)/launch/bringup.launch">
+        <arg name="player_name" value="green3"/>
+        <arg name="player_color" value="Green"/>
+        <arg name="x_pos" value="7"/>
+        <arg name="y_pos" value="5"/>
+        <arg name="z_pos" value="0"/>
+        <arg name="visualize" value="false"/>
+        <arg name="driver" value="false"/>
+        <arg name="driver_debug" value="false"/>
+    </include>
+
+<!--    Blue Team-->
+
+    <!--    blue1-->
+    <include file="$(find p_teamhunt_bringup_prep)/launch/bringup.launch">
+        <arg name="player_name" value="blue1"/>
+        <arg name="player_color" value="Blue"/>
+        <arg name="x_pos" value="-7"/>
+        <arg name="y_pos" value="0"/>
+        <arg name="z_pos" value="0"/>
+        <arg name="visualize" value="false"/>
+        <arg name="driver" value="false"/>
+        <arg name="driver_debug" value="false"/>
+    </include>
+
+    <!--    blue2-->
+    <include file="$(find p_teamhunt_bringup_prep)/launch/bringup.launch">
+        <arg name="player_name" value="blue2"/>
+        <arg name="player_color" value="Blue"/>
+        <arg name="x_pos" value="-7"/>
+        <arg name="y_pos" value="-1"/>
+        <arg name="z_pos" value="0"/>
+        <arg name="visualize" value="false"/>
+        <arg name="driver" value="false"/>
+        <arg name="driver_debug" value="false"/>
+    </include>
+
+    <!--    blue3-->
+    <include file="$(find p_teamhunt_bringup_prep)/launch/bringup.launch">
+        <arg name="player_name" value="blue3"/>
+        <arg name="player_color" value="Blue"/>
+        <arg name="x_pos" value="-7"/>
+        <arg name="y_pos" value="-2"/>
+        <arg name="z_pos" value="0"/>
+        <arg name="visualize" value="false"/>
+        <arg name="driver" value="false"/>
+        <arg name="driver_debug" value="false"/>
+    </include>
+
+</launch>

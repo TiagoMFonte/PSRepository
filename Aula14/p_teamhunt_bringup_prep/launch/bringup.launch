@@ -1,0 +1,47 @@
+<launch>
+    <!--Bloco 1: argumentos do launch file.-->
+    <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+    <arg name="player_name" default="p_teamhunt"/>
+    <arg name="player_color" default="Red"/>
+    <arg name="visualize" default="true"/>
+    <arg name="driver" default="false"/>
+    <arg name="driver_debug" default="false"/>
+    <arg name="x_pos" default="0.0"/>
+    <arg name="y_pos" default="-2.0"/>
+    <arg name="z_pos" default="0.0"/>
+
+    <group ns = "$(arg player_name)">
+        <param name="tf_prefix" value="$(arg player_name)"></param>
+        <!--Bloco 3: Carregamento do xacro do robot para o parâmetro robot_description.-->
+        <param name="robot_description" command="$(find xacro)/xacro --inorder $(find p_teamhunt_description_prep)/urdf/p_teamhunt.urdf.xacro player_name:=$(arg player_name) player_color:=$(arg player_color)" />
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+        <!--Include do spawn.launch-->
+        <include file="$(find p_teamhunt_bringup_prep)/launch/spawn.launch">
+            <arg name="player_name" value="$(arg player_name)"/>
+            <arg name="x_pos" value="$(arg x_pos)"/>
+            <arg name="y_pos" value="$(arg y_pos)"/>
+            <arg name="z_pos" value="$(arg z_pos)"/>
+        </include>
+
+        <group if="$(arg visualize)">
+            <include file="$(find p_teamhunt_bringup_prep)/launch/visualize.launch">
+                <arg name="player_name" value="$(arg player_name)"/>
+            </include>
+        </group>
+
+    </group>
+
+    <group if="$(arg driver)">
+        <node name="$(arg player_name)"  pkg="p_teamhunt_player_prep"  type="driver" output="screen">
+            <param name="debug" value="$(arg player_name)"/>
+        </node>
+    </group>
+    <!--Include do visualize.launch-->
+<!--    <include file="$(find p_teamhunt_bringup_prep)/launch/visualize.launch">-->
+<!--    </include>-->
+
+    <!--Include do teleop.launch-->
+    <!--<include file="$(find turtlebot3_teleopkey)/launch/turtlebot3_teleop_key.launch"> -->
+    <!--</include>-->
+</launch>
