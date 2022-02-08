@@ -1,0 +1,5 @@
+#estrategia do jogador
+#1: ataque, 2: defesa, 3:o que calhar, ver o que vale mais
+redjogador1: 2
+redjogador2: 2
+redjogador3: 1
